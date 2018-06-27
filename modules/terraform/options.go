@@ -4,6 +4,7 @@ import "time"
 
 // Options for running Terraform commands
 type Options struct {
+	TerraformBinary          string                 // Name of the binary that will be used
 	TerraformDir             string                 // The path to the folder where the Terraform code is defined.
 	Vars                     map[string]interface{} // The vars to pass to Terraform commands using the -var option.
 	EnvVars                  map[string]string      // Environment variables to set when running Terraform
@@ -13,4 +14,5 @@ type Options struct {
 	TimeBetweenRetries       time.Duration          // The amount of time to wait between retries
 	Upgrade                  bool                   // Whether the -upgrade flag of the terraform init command should be set to true or not
 	NoColor                  bool                   // Whether the -no-color flag will be set for any Terraform command or not
+	NoStderr                 bool                   // Disable stderr redirection
 }
