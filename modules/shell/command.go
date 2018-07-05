@@ -74,7 +74,7 @@ func RunCommandAndGetOutputE(t *testing.T, command Command) (string, error) {
 
 	var output string
 	if command.NoStderr {
-		output, err = readStdout(t, stdout)
+		output, err = readStdoutAndStderr(t, stdout)
 	} else {
 		output, err = readStdoutAndStderr(t, stdout, stderr)
 	}
@@ -90,56 +90,25 @@ func RunCommandAndGetOutputE(t *testing.T, command Command) (string, error) {
 	return output, nil
 }
 
-// This function captures stdout while still printing it to the stdout of this Go program
-func readStdout(t *testing.T, stdout io.ReadCloser) (string, error) {
-	allOutput := []string{}
-
-	stdoutScanner := bufio.NewScanner(stdout)
-
-	for {
-		if stdoutScanner.Scan() {
-			text := stdoutScanner.Text()
-			logger.Log(t, text)
-			allOutput = append(allOutput, text)
-		} else {
-			break
-		}
-	}
-
-	if err := stdoutScanner.Err(); err != nil {
-		return "", err
-	}
-
-	return strings.Join(allOutput, "\n"), nil
-}
-
 // This function captures stdout and stderr while still printing it to the stdout and stderr of this Go program
-func readStdoutAndStderr(t *testing.T, stdout io.ReadCloser, stderr io.ReadCloser) (string, error) {
+func readStdoutAndStderr(t *testing.T, outputs ...io.ReadCloser) (string, error) {
 	allOutput := []string{}
 
-	stdoutScanner := bufio.NewScanner(stdout)
-	stderrScanner := bufio.NewScanner(stderr)
+	scanners := []bufio.Scanner{}
+	for i := range outputs {
+		scanners = append(scanners, *bufio.NewScanner(outputs[i]))
+	}
 
-	for {
-		if stdoutScanner.Scan() {
-			text := stdoutScanner.Text()
+	for i := range scanners {
+		if scanners[i].Scan() {
+			text := scanners[i].Text()
 			logger.Log(t, text)
 			allOutput = append(allOutput, text)
-		} else if stderrScanner.Scan() {
-			text := stderrScanner.Text()
-			logger.Log(t, text)
-			allOutput = append(allOutput, text)
-		} else {
-			break
 		}
-	}
 
-	if err := stdoutScanner.Err(); err != nil {
-		return "", err
-	}
-
-	if err := stderrScanner.Err(); err != nil {
-		return "", err
+		if err := scanners[i].Err(); err != nil {
+			return "", err
+		}
 	}
 
 	return strings.Join(allOutput, "\n"), nil
